@@ -28,13 +28,16 @@ public class RestApiNotifications extends CordovaPlugin {
     private SharedPreferences mSettings;
 
     private String CFG_url;
+    private JSONObject CFG_postdata;
 
     //@Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         LOG.d("TRUCKLOG", "TRICKLOG FCM RestApiNotifications execute");
         CFG_url = args.getString(0);
+        CFG_postdata  = args.getJSONObject(1);
 
-        LOG.d("TRUCKLOG", "TRICKLOG FCM RestApiNotifications CFG_url" + CFG_url);
+        LOG.d("TRUCKLOG", "TRICKLOG FCM RestApiNotifications CFG_url " + CFG_url);
+        LOG.d("TRUCKLOG", "TRICKLOG FCM RestApiNotifications CFG_postdata " + CFG_postdata.toString());
 
         if (action.equals("init")) {
             this.init(callbackContext);

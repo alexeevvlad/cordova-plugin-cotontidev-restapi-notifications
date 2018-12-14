@@ -35,6 +35,9 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 public class RestApiNotificationsService extends Service {
   public static final String APP_PREFERENCES = "settings";
   public static final String COTONTIDEV_REST_API_NOTY_URL = "cotontidev_restapinoty_url";
@@ -42,7 +45,9 @@ public class RestApiNotificationsService extends Service {
 
   private String CFG_url;
 
-  Handler mHandler = new Handler();
+  MyBinder binder = new MyBinder();
+  Timer timer;
+  TimerTask tTask;
 
   @Override
   public int onStartCommand(Intent intent, int flags, int startId) {
@@ -53,12 +58,15 @@ public class RestApiNotificationsService extends Service {
 
       LOG.d("TRUCKLOG", "TRICKLOG FCM RestApiNotifications onStartCommand CFG_url" + CFG_url);
 
-      mHandler.postDelayed(ToastRunnable, 5000);
+      timer = new Timer();
+      schedule();
       return START_STICKY;
   }
 
   @Override
 	public void onCreate() {
+      super.onCreate();
+
       LOG.d("TRUCKLOG", "TRICKLOG FCM RestApiNotifications onCreate");
 
       mSettings = getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
@@ -66,85 +74,92 @@ public class RestApiNotificationsService extends Service {
 
       LOG.d("TRUCKLOG", "TRICKLOG FCM RestApiNotifications onStartCommand CFG_url" + CFG_url);
 
-		  mHandler.postDelayed(ToastRunnable, 5000);
+      timer = new Timer();
+      schedule();
 	}
 
-  @Override
-  public IBinder onBind(Intent intent) {
-      return null;
+  void schedule() {
+      if (tTask != null) tTask.cancel();
+          tTask = new TimerTask() {
+              public void run() {
+                  LOG.d("TRUCKLOG", "TRICKLOG FCM RestApiNotifications schedule run + CFG_url" + CFG_url);
+
+                  try {
+                      HttpURLConnection connect = (HttpURLConnection) new URL(CFG_url).openConnection();
+                      connect.setRequestMethod("GET");
+                      connect.setRequestProperty("Content-length", "0");
+                      connect.setUseCaches(false);
+                      connect.setAllowUserInteraction(false);
+                      connect.connect();
+
+                      int status = connect.getResponseCode();
+
+                      switch (status) {
+                          case 200:
+                          case 201:
+                              BufferedReader br = new BufferedReader(new InputStreamReader(
+                                      connect.getInputStream(), "UTF-8"));
+                              StringBuilder sb = new StringBuilder();
+                              String line;
+                              while ((line = br.readLine()) != null) {
+                                  sb.append(line + "\n");
+                              }
+                              br.close();
+
+                              try{
+                                  LOG.d("TRUCKLOG", "TRICKLOG FCM RestApiNotifications response" + sb.toString());
+
+                                  JSONObject jsonObject = new JSONObject(sb.toString());
+                                  if(jsonObject.getString("status").equals("success"))
+                                  {
+                                    LOG.d("TRUCKLOG", "TRICKLOG FCM RestApiNotifications response equals success");
+                                    jsonObject = jsonObject.getJSONObject("data");
+                                    if(jsonObject.getInt("success") == 1)
+                                    {
+                                      LOG.d("TRUCKLOG", "TRICKLOG FCM RestApiNotifications response equals 1");
+                                      JSONArray jsonTmpJson = jsonObject.getJSONArray("noty");
+                                      if(jsonTmpJson.length() > 0) {
+                                        LOG.d("TRUCKLOG", "TRICKLOG FCM RestApiNotifications response jsonTmpJson.length > 0");
+                                        for (int i = 0; i < jsonTmpJson.length(); i++) {
+                                          Context context = getApplicationContext();
+                                          NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+
+                                          NotificationCompat.Builder mBuilder =
+                                                      new NotificationCompat.Builder(context)
+                                                              .setSmallIcon(android.R.drawable.ic_menu_mylocation)//context.getApplicationInfo().icon)
+                                                              .setWhen(System.currentTimeMillis())
+                                                              .setContentTitle(jsonTmpJson.getJSONObject(i).getString("title"))
+                                                              .setTicker("Ticker")
+                                                              .setContentText(jsonTmpJson.getJSONObject(i).getString("text"))
+                                                              .setNumber(jsonTmpJson.getJSONObject(i).getInt("id"))
+                                                              .setAutoCancel(true);
+
+                                          mNotificationManager.notify(jsonTmpJson.getJSONObject(i).getInt("id"), mBuilder.build());
+                                        }
+                                      }
+                                    }
+                                  }
+                              } catch (JSONException e){
+                                  e.printStackTrace();
+                              }
+                      }
+                  } catch (MalformedURLException ex) {
+                      ex.printStackTrace();
+                  } catch (IOException ex) {
+                     // return false;
+                  }
+              }
+          };
+          timer.schedule(tTask, 5000, 60000);
   }
 
-  Runnable ToastRunnable = new Runnable() {
-      public void run() {
-          LOG.d("TRUCKLOG", "TRICKLOG FCM RestApiNotifications ToastRunnable run + CFG_url" + CFG_url);
+  public IBinder onBind(Intent arg0) {
+      return binder;
+  }
 
-          /*
-          JSONArray jsonTmpJson = jsonObject.getJSONArray("orders");
-          data = new ArrayList<Map<String, Object>>(jsonTmpJson.length());
-          ordersIds = new Integer[jsonTmpJson.length()];
-          for (int i = 0; i < jsonTmpJson.length(); i++) {
-              ordersIds[i] = jsonTmpJson.getJSONObject(i).getInt("ID");
-
-              m = new HashMap<String, Object>();
-              m.put("VODCHECK", jsonTmpJson.getJSONObject(i).getString("VODCHECK"));
-              m.put("TITLE", jsonTmpJson.getJSONObject(i).getString("TITLE"));
-              m.put("ROUTE", jsonTmpJson.getJSONObject(i).getString("ROUTE"));
-              m.put("DATESTART", jsonTmpJson.getJSONObject(i).getString("DATESTART"));
-              m.put("COST", jsonTmpJson.getJSONObject(i).getString("COST"));
-              data.add(m);
-          }
-          */
-
-          try {
-              HttpURLConnection connect = (HttpURLConnection) new URL(CFG_url).openConnection();
-              connect.setRequestMethod("GET");
-              connect.setRequestProperty("Content-length", "0");
-              connect.setUseCaches(false);
-              connect.setAllowUserInteraction(false);
-              connect.connect();
-
-              int status = connect.getResponseCode();
-
-              LOG.d("TRUCKLOG", "TRICKLOG FCM RestApiNotifications connect to" + CFG_url);
-
-              switch (status) {
-                  case 200:
-                  case 201:
-                      BufferedReader br = new BufferedReader(new InputStreamReader(
-                              connect.getInputStream(), "UTF-8"));
-                      StringBuilder sb = new StringBuilder();
-                      String line;
-                      while ((line = br.readLine()) != null) {
-                          sb.append(line + "\n");
-                      }
-                      br.close();
-
-                      LOG.d("TRUCKLOG", "TRICKLOG FCM RestApiNotifications response" + sb.toString());
-
-                      //JSONObject jsonObject = new JSONObject(sb.toString());
-
-                      Context context = getApplicationContext();
-                      NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-
-                      NotificationCompat.Builder mBuilder =
-                                  new NotificationCompat.Builder(context)
-                                          .setSmallIcon(context.getApplicationInfo().icon)
-                                          .setWhen(System.currentTimeMillis())
-                                          .setContentTitle("It works!")
-                                          .setTicker("Ticker")
-                                          .setContentText("Text")
-                                          .setNumber(1)
-                                          .setAutoCancel(true);
-
-                      mNotificationManager.notify("App Name", 228, mBuilder.build());
-              }
-          } catch (MalformedURLException ex) {
-              ex.printStackTrace();
-          } catch (IOException ex) {
-              // return false;
-          }
-
-          mHandler.postDelayed( ToastRunnable, 10000);
-      }
-  };
+  class MyBinder extends Binder {
+    RestApiNotificationsService getService() {
+        return RestApiNotificationsService.this;
+    }
+  }
 }
