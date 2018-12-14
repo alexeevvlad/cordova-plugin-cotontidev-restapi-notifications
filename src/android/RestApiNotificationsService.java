@@ -126,7 +126,7 @@ public class RestApiNotificationsService extends Service {
 
                                           NotificationCompat.Builder mBuilder =
                                                       new NotificationCompat.Builder(context)
-                                                              .setSmallIcon(android.R.drawable.ic_menu_mylocation)//context.getApplicationInfo().icon)
+                                                              .setSmallIcon(android.R.drawable.ic_dialog_email)//context.getApplicationInfo().icon)
                                                               .setWhen(System.currentTimeMillis())
                                                               .setContentTitle(jsonTmpJson.getJSONObject(i).getString("title"))
                                                               .setTicker("Ticker")
