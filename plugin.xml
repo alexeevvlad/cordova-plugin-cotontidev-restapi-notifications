@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        id="cordova-plugin-cotontidev-restapi-notifications"
+        version="0.0.1">
+
+  <name>RestApiNotifications</name>
+  <description></description>
+  <keywords>notifications,restapi,json,php</keywords>
+  <repo>https://github.com/alexeevvlad/cordova-plugin-cotontidev-restapi-notifications.git</repo>
+  <license>tucklog.ru</license>
+  <author>Alexeev Vlad</author>
+    <engines>
+      <engine name="cordova" version=">=4.0.0" />
+      <engine name="cordova-plugman" version=">=4.3.0"  />
+      <engine name="cordova-android" version=">=7.0.0"  />
+    </engines>
+    <js-module name="RestApiNotifications" src="www/restApiNotifications.js">
+      <clobbers target="RestApiNotifications" />
+    </js-module>
+    <platform name="android">
+      <framework src="com.android.support:support-v4:26.+" />
+      <config-file parent="/*" target="res/xml/config.xml">
+        <feature name="RestApiNotifications">
+          <param name="android-package" value="ru.cotontidev.restapinotifications.RestApiNotifications" />
+        </feature>
+      </config-file>
+
+      <config-file target="AndroidManifest.xml" parent="/manifest/application">
+        <service
+          android:name="ru.cotontidev.restapinotifications.RestApiNotificationsService"
+          android:enabled="true"
+          android:exported="true" />
+
+          <receiver
+              android:name="ru.cotontidev.restapinotifications.RestApiNotificationsBootCompletedReceiver" android:enabled="true" android:exported="true">
+              <intent-filter>
+                  <action android:name="android.intent.action.BOOT_COMPLETED" />
+              </intent-filter>
+          </receiver>
+      </config-file>
+
+      <config-file target="AndroidManifest.xml" parent="/manifest">
+          <uses-permission android:name="android.permission.QUICKBOOT_POWERON" />
+          <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+      </config-file>
+
+
+      <source-file src="src/android/RestApiNotifications.java"                       target-dir="src/ru/cotontidev/restapinotifications/" />
+      <source-file src="src/android/RestApiNotificationsService.java" 	              target-dir="src/ru/cotontidev/restapinotifications/" />
+      <source-file src="src/android/RestApiNotificationsBootCompletedReceiver.java" 	target-dir="src/ru/cotontidev/restapinotifications/" />
+    </platform>
+  </plugin>

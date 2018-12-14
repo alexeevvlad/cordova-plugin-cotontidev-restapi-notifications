@@ -1,0 +1,29 @@
+{
+  "name": "cordova-plugin-cotontidev-restapi-notifications",
+  "version": "0.0.1",
+  "description": "",
+  "cordova": {
+    "id": " cordova-plugin-cotontidev-restapi-notifications",
+    "platforms": [
+      "android"
+    ]
+  },
+  "keywords": [
+    "trucklog",
+    "ecosystem:cordova",
+    "cordova-android"
+  ],
+  "engines": [
+    {
+      "name": "cordova",
+      "version": ">=4.0.0"
+    }
+  ],
+  "author": "Alexeev Vlad",
+  "homepage": "https://github.com/alexeevvlad/cordova-plugin-cotontidev-restapi-notifications",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexeevvlad/cordova-plugin-cotontidev-restapi-notifications.git"
+  },
+  "license": "cotontidev.ru"
+}
